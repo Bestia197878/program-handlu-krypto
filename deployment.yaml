@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crypto-trading
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crypto-trading
+  template:
+    metadata:
+      labels:
+        app: crypto-trading
+    spec:
+      containers:
+      - name: trading-app
+        image: your-docker-image:latest
+        env:
+        - name: BINANCE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: crypto-secrets
+              key: BINANCE_API_KEY
+        - name: BINANCE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: crypto-secrets
+              key: BINANCE_SECRET
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: crypto-config

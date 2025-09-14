@@ -1,0 +1,24 @@
+input {
+  file {
+    path => "/app/logs/trading.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+  }
+}
+
+filter {
+  grok {
+    match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} - %{LOGLEVEL:level} - %{GREEDYDATA:message}" }
+  }
+  date {
+    match => [ "timestamp", "YYYY-MM-dd HH:mm:ss" ]
+    target => "@timestamp"
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+    index => "crypto-logs-%{+YYYY.MM.dd}"
+  }
+}

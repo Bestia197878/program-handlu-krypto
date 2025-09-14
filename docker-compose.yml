@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  trading-app:
+    build: .
+    ports:
+      - "8050:8050"
+    environment:
+      - BINANCE_API_KEY=${BINANCE_API_KEY}
+      - BINANCE_SECRET=${BINANCE_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - DASH_USERNAME=${DASH_USERNAME}
+      - DASH_PASSWORD=${DASH_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - elasticsearch
+      - kibana
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es-/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - crypto-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.5.0
+    volumes:
+      - ./monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      - elasticsearch
+    networks:
+      - crypto-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - crypto-network
+
+volumes:
+  es-data:
+
+networks:
+  crypto-network:
+    driver: bridge

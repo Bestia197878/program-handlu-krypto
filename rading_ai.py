@@ -9,24 +9,70 @@ import ta
 import requests
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import tweepy
-import praw
-from stable_baselines3 import DQN, PPO
+import time
+import json
+import logging
+import os
 from datetime import datetime, timedelta
-from utils import api, risk_management, data_processing, ai_models
 import sys
 
-with open('config.json') as f:
-    config = json.load(f)
-log_dir = os.path.dirname(config.get('log_file') or '') or '.'
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    filename=config['log_file'],
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger()
+# Lazy/optional imports for heavy libraries to speed startup and make smoke-tests resilient
+try:
+    import ccxt
+except Exception:
+    ccxt = None
+
+try:
+    import pandas as pd
+except Exception:
+    pd = None
+
+try:
+    import numpy as np
+except Exception:
+    np = None
+
+try:
+    import ta
+except Exception:
+    ta = None
+
+try:
+    import requests
+except Exception:
+    requests = None
+
+try:
+    import torch
+except Exception:
+    torch = None
+
+try:
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    transformers_available = True
+except Exception:
+    AutoTokenizer = None
+    AutoModelForSequenceClassification = None
+    transformers_available = False
+
+try:
+    import tweepy
+except Exception:
+    tweepy = None
+
+try:
+    import praw
+except Exception:
+    praw = None
+
+try:
+    from stable_baselines3 import DQN, PPO
+except Exception:
+    DQN = None
+    PPO = None
+
+import api
+from utils import risk_management, data_processing, ai_models
 
 exchange = ccxt.binance({
     'apiKey': os.getenv('BINANCE_API_KEY'),
@@ -41,19 +87,47 @@ exchange = ccxt.binance({
 })
 logger.info("✅ Połączono z Binance Testnet")
 
+# Initialize exchange only if ccxt is available
+exchange = None
+if ccxt is not None:
+    try:
+        exchange = ccxt.binance({
+            'apiKey': os.getenv('BINANCE_API_KEY'),
+            'secret': os.getenv('BINANCE_SECRET'),
+            'enableRateLimit': True,
+            'urls': {
+                'api': {
+                    'public': 'https://testnet.binance.vision/api/v3',
+                    'private': 'https://testnet.binance.vision/api/v3'
+                }
+            }
+        })
+        logger.info("✅ Połączono z Binance Testnet")
+    except Exception as e:
+        logger.error(f"❌ Błąd inicjalizacji exchange: {e}")
+        exchange = None
+else:
+    logger.warning("ccxt not available; exchange functionality disabled")
+
 # Optional scikit-learn imports (make sklearn optional to avoid hard dependency at startup)
 try:
     from sklearn.ensemble import IsolationForest
 except Exception:
     IsolationForest = None
     logger.warning("scikit-learn not available; anomaly detection disabled until installed")
-try:
-    tokenizer = AutoTokenizer.from_pretrained("yiyanghkust/finbert-tone")
-    finbert_model = AutoModelForSequenceClassification.from_pretrained("yiyanghkust/finbert-tone")
-    logger.info("✅ Agent sentimentu (LLM) załadowany pomyślnie")
-except Exception as e:
-    logger.error(f"❌ Błąd ładowania agenta sentimentu: {str(e)}")
-    raise
+if transformers_available:
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("yiyanghkust/finbert-tone")
+        finbert_model = AutoModelForSequenceClassification.from_pretrained("yiyanghkust/finbert-tone")
+        logger.info("✅ Agent sentimentu (LLM) załadowany pomyślnie")
+    except Exception as e:
+        logger.error(f"❌ Błąd ładowania agenta sentimentu: {str(e)}")
+        finbert_model = None
+        tokenizer = None
+else:
+    tokenizer = None
+    finbert_model = None
+    logger.warning("transformers not available; sentiment agent disabled")
 
 try:
     trading_agent = ai_models.load_trading_agent(config['trading_agent_path'])

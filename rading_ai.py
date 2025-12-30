@@ -15,11 +15,12 @@ from stable_baselines3 import DQN, PPO
 from datetime import datetime, timedelta
 from sklearn.ensemble import IsolationForest
 from utils import api, risk_management, data_processing, ai_models
+import sys
 
-with open('config/config.json') as f:
+with open('config.json') as f:
     config = json.load(f)
-
-os.makedirs(os.path.dirname(config['log_file']), exist_ok=True)
+log_dir = os.path.dirname(config.get('log_file') or '') or '.'
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     filename=config['log_file'],
     level=logging.INFO,

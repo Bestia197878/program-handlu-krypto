@@ -3,9 +3,18 @@ import ccxt
 import time
 import logging
 import os
+import tweepy
+import praw
 from datetime import datetime
 
 logger = logging.getLogger()
+
+# Create an exchange instance (will use env vars if provided)
+exchange = ccxt.binance({
+    'apiKey': os.getenv('BINANCE_API_KEY'),
+    'secret': os.getenv('BINANCE_SECRET'),
+    'enableRateLimit': True
+})
 
 def fetch_with_retry(func, max_retries=5, initial_delay=1):
     for i in range(max_retries):
@@ -108,7 +117,8 @@ def execute_trade(action, amount, trade_history, current_price):
             logger.warning(f"⚠️ Rozmiar {amount} mniejszy niż minimalny {min_size}")
             return False
             
-        if action == 'buy':
+        act = action.lower() if isinstance(action, str) else action
+        if act == 'buy':
             order = exchange.create_market_buy_order('BTC/USDT', amount)
             logger.info(f"✅ Kupiono {amount} BTC za {order['cost']} USDT")
             trade_history.append({
@@ -118,7 +128,7 @@ def execute_trade(action, amount, trade_history, current_price):
                 'cost': order['cost'],
                 'timestamp': datetime.now()
             })
-        elif action == 'sell':
+        elif act == 'sell':
             order = exchange.create_market_sell_order('BTC/USDT', amount)
             logger.info(f"✅ Sprzedano {amount} BTC za {order['cost']} USDT")
             last_buy = next((t for t in trade_history if t['action'] == 'buy' and not t.get('sold', False)), None)

@@ -90,14 +90,6 @@ exchange = None
 if ccxt is not None:
     try:
         exchange = ccxt.binance({
-    'apiKey': os.getenv('BINANCE_API_KEY'),
-    'secret': os.getenv('BINANCE_SECRET'),
-    'enableRateLimit': True,
-    'urls': {
-        'api': {
-            'public': 'https://testnet.binance.vision/api/v3',
-            'private': 'https://testnet.binance.vision/api/v3'
-        }
             'apiKey': os.getenv('BINANCE_API_KEY'),
             'secret': os.getenv('BINANCE_SECRET'),
             'enableRateLimit': True,

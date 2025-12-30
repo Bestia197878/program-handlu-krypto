@@ -74,7 +74,22 @@ except Exception:
 import api
 from utils import risk_management, data_processing, ai_models
 
-exchange = ccxt.binance({
+with open('config.json') as f:
+    config = json.load(f)
+log_dir = os.path.dirname(config.get('log_file') or '') or '.'
+os.makedirs(log_dir, exist_ok=True)
+logging.basicConfig(
+    filename=config.get('log_file', 'app.log'),
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger()
+
+exchange = None
+if ccxt is not None:
+    try:
+        exchange = ccxt.binance({
     'apiKey': os.getenv('BINANCE_API_KEY'),
     'secret': os.getenv('BINANCE_SECRET'),
     'enableRateLimit': True,
@@ -83,15 +98,6 @@ exchange = ccxt.binance({
             'public': 'https://testnet.binance.vision/api/v3',
             'private': 'https://testnet.binance.vision/api/v3'
         }
-    }
-})
-logger.info("✅ Połączono z Binance Testnet")
-
-# Initialize exchange only if ccxt is available
-exchange = None
-if ccxt is not None:
-    try:
-        exchange = ccxt.binance({
             'apiKey': os.getenv('BINANCE_API_KEY'),
             'secret': os.getenv('BINANCE_SECRET'),
             'enableRateLimit': True,

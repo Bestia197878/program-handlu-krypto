@@ -1,0 +1,21 @@
+name: CI Smoke Tests (Docker)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU (for cross-platform builds)
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        run: docker build -f Dockerfile.full -t phk_validation:ci . --pull
+      - name: Run light smoke tests inside container
+        run: |
+          docker run --rm phk_validation:ci /bin/bash -lc "python -m compileall -q . && echo COMPILE_OK; python -c \"import api, utils.ai_models; print('imports ok')\"; python -c \"from utils.training_runner import run_quick_train; run_quick_train()\""

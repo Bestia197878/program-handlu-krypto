@@ -1,10 +1,27 @@
-import requests
-import ccxt
 import time
 import logging
 import os
-import tweepy
-import praw
+
+# Lazy imports for heavy/optional external clients
+try:
+    import requests
+except Exception:
+    requests = None
+
+try:
+    import ccxt
+except Exception:
+    ccxt = None
+
+try:
+    import tweepy
+except Exception:
+    tweepy = None
+
+try:
+    import praw
+except Exception:
+    praw = None
 from datetime import datetime
 
 logger = logging.getLogger()

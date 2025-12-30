@@ -13,7 +13,6 @@ import tweepy
 import praw
 from stable_baselines3 import DQN, PPO
 from datetime import datetime, timedelta
-from sklearn.ensemble import IsolationForest
 from utils import api, risk_management, data_processing, ai_models
 import sys
 
@@ -42,6 +41,12 @@ exchange = ccxt.binance({
 })
 logger.info("✅ Połączono z Binance Testnet")
 
+# Optional scikit-learn imports (make sklearn optional to avoid hard dependency at startup)
+try:
+    from sklearn.ensemble import IsolationForest
+except Exception:
+    IsolationForest = None
+    logger.warning("scikit-learn not available; anomaly detection disabled until installed")
 try:
     tokenizer = AutoTokenizer.from_pretrained("yiyanghkust/finbert-tone")
     finbert_model = AutoModelForSequenceClassification.from_pretrained("yiyanghkust/finbert-tone")

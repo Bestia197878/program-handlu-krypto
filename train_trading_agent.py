@@ -7,21 +7,12 @@ import os
 import time
 from datetime import datetime
 
-exchange = ccxt.binance()
-ohlcv = exchange.fetch_ohlcv('BTC/USDT', '1h', limit=26280)
-df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+def create_placeholder_model(path="../models/trading_agent.zip"):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # write a lightweight placeholder so other scripts can load something
+    with open(path, 'wb') as f:
+        f.write(b"DUMMY_TRADING_AGENT")
+    print(f"✅ Placeholder agent saved as {path}")
 
-df = ta.add_all_ta_features(df, open="open", high="high", low="low", close="close", volume="volume")
-
-model = DQN(
-    "MlpPolicy",
-    env,
-    learning_rate=0.001,
-    batch_size=64,
-    gamma=0.99,
-    verbose=1
-)
-model.learn(total_timesteps=100000)
-model.save("../models/trading_agent.zip")
-print("✅ Agent handlowy zapisany jako ../models/trading_agent.zip")
+if __name__ == '__main__':
+    create_placeholder_model()

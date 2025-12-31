@@ -1,0 +1,4 @@
+"""pip-requirements
+# AWS-related dependencies separated from core to avoid pip-audit conflicts
+boto3==1.28.53
+"""
